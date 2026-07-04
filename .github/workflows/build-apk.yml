@@ -1,0 +1,141 @@
+# =============================================================================
+# knanGuz — Cloud APK Compiler Workflow
+# =============================================================================
+
+name: Build APK
+
+on:
+  repository_dispatch:
+    types: [build-apk]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_ID: ${{ github.event.client_payload.build_id }}
+      APP_NAME: ${{ github.event.client_payload.app_name }}
+      PACKAGE_ID: ${{ github.event.client_payload.package_id }}
+      PAYLOAD_PATH: ${{ github.event.client_payload.payload_path }}
+      CALLBACK_URL: ${{ github.event.client_payload.callback_url }}
+      CALLBACK_SECRET: ${{ secrets.BUILD_CALLBACK_SECRET }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Report build started
+        run: |
+          curl -s -X POST "$CALLBACK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Callback-Secret: $CALLBACK_SECRET" \
+            -d "{\"build_id\":\"$BUILD_ID\",\"status\":\"building\"}" || true
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Scaffold Capacitor project
+        run: |
+          set -e
+          mkdir -p mobile-project/www
+          cd mobile-project
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "$APP_NAME" "$PACKAGE_ID" --web-dir=www
+
+      - name: Inject user code into www/index.html
+        run: |
+          set -e
+          cp "$PAYLOAD_PATH" mobile-project/www/index.html
+          echo "Injected payload from $PAYLOAD_PATH"
+
+      - name: Add Android platform
+        working-directory: mobile-project
+        run: |
+          set -e
+          npx cap add android
+          npx cap sync android
+
+      - name: Build APK with Gradle
+        working-directory: mobile-project/android
+        run: |
+          set -e
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Sign APK
+        working-directory: mobile-project/android
+        run: |
+          set -e
+          UNSIGNED_APK="app/build/outputs/apk/release/app-release-unsigned.apk"
+          ALIGNED_APK="app/build/outputs/apk/release/app-release-aligned.apk"
+          SIGNED_APK="app/build/outputs/apk/release/${APP_NAME// /-}-signed.apk"
+          KEYSTORE="knanguz-release.keystore"
+
+          keytool -genkeypair -v \
+            -keystore "$KEYSTORE" \
+            -alias knanguzkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass knanguz123 -keypass knanguz123 \
+            -dname "CN=knanGuz, OU=CloudBuild, O=knanGuz, L=Nairobi, S=Nairobi, C=KE"
+
+          BUILD_TOOLS_DIR=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n1)
+
+          "${BUILD_TOOLS_DIR}zipalign" -v -p 4 "$UNSIGNED_APK" "$ALIGNED_APK"
+
+          "${BUILD_TOOLS_DIR}apksigner" sign \
+            --ks "$KEYSTORE" \
+            --ks-pass pass:knanguz123 \
+            --key-pass pass:knanguz123 \
+            --out "$SIGNED_APK" \
+            "$ALIGNED_APK"
+
+          echo "SIGNED_APK_PATH=mobile-project/android/${SIGNED_APK}" >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release with APK asset
+        id: release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ env.BUILD_ID }}
+          name: "knanGuz build ${{ env.BUILD_ID }} — ${{ env.APP_NAME }}"
+          body: "Automated cloud build for ${{ env.APP_NAME }} (${{ env.PACKAGE_ID }})."
+          files: ${{ env.SIGNED_APK_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Report build success
+        if: success()
+        run: |
+          FILENAME=$(basename "$SIGNED_APK_PATH")
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/build-${BUILD_ID}/${FILENAME}"
+          curl -s -X POST "$CALLBACK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Callback-Secret: $CALLBACK_SECRET" \
+            -d "{\"build_id\":\"$BUILD_ID\",\"status\":\"success\",\"download_url\":\"$DOWNLOAD_URL\"}"
+
+      - name: Report build failure
+        if: failure()
+        run: |
+          curl -s -X POST "$CALLBACK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Callback-Secret: $CALLBACK_SECRET" \
+            -d "{\"build_id\":\"$BUILD_ID\",\"status\":\"failed\",\"error\":\"Build failed — check Actions logs.\"}"
+
+      - name: Clean up payload file
+        if: always()
+        run: |
+          git config user.name "knanguz-bot"
+          git config user.email "bot@knanguz.local"
+          git rm -f "$PAYLOAD_PATH" || true
+          git commit -m "knanGuz: clean up payload for $BUILD_ID" || true
+          git push || true
