@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knan</title>
+<style>:root{
+  --rasta-red:   #D62828;
+  --rasta-gold:  #F6C10B;
+  --rasta-green: #0B8A3F;
+
+  --bg-deep:     #060B08;
+  --panel-bg:    rgba(13, 24, 17, 0.94);
+  --panel-edge:  rgba(246, 193, 11, 0.14);
+  --text-warm:   #F5F1E6;
+  --text-dim:    #9FB3A6;
+  --gold-glow:   rgba(246, 193, 11, 0.35);
+
+  --radius-lg: 22px;
+  --radius-md: 14px;
+
+  --theme-a: var(--rasta-red);
+  --theme-b: var(--rasta-gold);
+  --theme-c: var(--rasta-green);
+  --dim-amount: 0.35;
+}
+
+*{ box-sizing: border-box; }
+
+html, body{
+  margin:0; padding:0; height:100%;
+  background: var(--bg-deep);
+  color: var(--text-warm);
+  font-family: 'Space Grotesk', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#dimOverlay{
+  position: fixed; inset: 0; z-index: 999999;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: var(--dim-amount);
+  transition: opacity 220ms ease;
+}
+.band{ position: absolute; inset: 0; filter: saturate(1.15); }
+.band-left{ background: radial-gradient(120% 140% at 0% 50%, var(--theme-a) 0%, transparent 62%); }
+.band-mid{
+  background: radial-gradient(90% 130% at 50% 50%, var(--theme-b) 0%, transparent 65%);
+  mix-blend-mode: screen; opacity: .8;
+}
+.band-right{ background: radial-gradient(120% 140% at 100% 50%, var(--theme-c) 0%, transparent 62%); }
+.grain{
+  position:absolute; inset:0; opacity:.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+.launcher{
+  position: fixed; right: 20px; bottom: 84px; width: 56px; height: 56px;
+  border-radius: 50%; border: none; z-index: 1000001;
+  background: radial-gradient(circle at 35% 30%, #1a2b1f, #060B08 70%);
+  box-shadow: 0 0 0 1px var(--panel-edge), 0 8px 24px rgba(0,0,0,.5);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.launcher-ring{
+  position:absolute; inset:6px; border-radius:50%;
+  background: conic-gradient(var(--rasta-red), var(--rasta-gold), var(--rasta-green), var(--rasta-red));
+  opacity:.9;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+}
+.launcher-dot{ width:10px; height:10px; border-radius:50%; background: var(--text-warm); box-shadow: 0 0 10px var(--gold-glow); }
+
+.panel{
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000000;
+  max-height: 88vh; overflow-y: auto;
+  background: var(--panel-bg);
+  backdrop-filter: blur(18px);
+  border-top: 1px solid var(--panel-edge);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 18px 20px calc(20px + env(safe-area-inset-bottom));
+  transform: translateY(calc(100% - 96px));
+  transition: transform 320ms cubic-bezier(.2,.8,.2,1);
+}
+.panel.open{ transform: translateY(0); }
+
+.panel-header{ display:flex; align-items:center; justify-content:space-between; padding-bottom: 14px; }
+.brand{ display:flex; align-items:center; gap:12px; }
+.brand-mark{ display:flex; gap:3px; }
+.brand-mark .dot{ width:9px; height:9px; border-radius:50%; display:block; }
+.brand-mark .red{ background: var(--rasta-red); }
+.brand-mark .gold{ background: var(--rasta-gold); }
+.brand-mark .green{ background: var(--rasta-green); }
+.brand h1{ font-family:'Bungee', sans-serif; font-size: 20px; margin:0; }
+.tagline{ margin:2px 0 0; font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; }
+
+.status-pill{
+  display:flex; align-items:center; gap:7px; font-size: 11px; color: var(--text-dim);
+  border: 1px solid var(--panel-edge); border-radius: 999px; padding: 6px 12px;
+}
+.pulse{ width:7px; height:7px; border-radius:50%; background: var(--rasta-green); box-shadow: 0 0 8px var(--rasta-green); }
+.status-pill.offline .pulse{ background: var(--rasta-red); box-shadow:0 0 8px var(--rasta-red); }
+
+.fader-section{
+  display:flex; gap: 22px; align-items:center; padding: 18px 4px 8px;
+  border-top: 1px dashed var(--panel-edge); border-bottom: 1px dashed var(--panel-edge);
+}
+.fader-track-wrap{ position: relative; height: 200px; width: 64px; display:flex; align-items:center; justify-content:center; }
+input.fader{ -webkit-appearance: none; appearance: none; width: 200px; height: 34px; background: transparent; transform: rotate(-90deg); margin:0; }
+input.fader::-webkit-slider-runnable-track{ height: 8px; border-radius: 999px; background: linear-gradient(90deg, var(--rasta-green), var(--rasta-gold), var(--rasta-red)); }
+input.fader::-webkit-slider-thumb{
+  -webkit-appearance:none; width: 30px; height: 30px; margin-top: -11px; border-radius: 8px;
+  background: linear-gradient(180deg, #2a2a2a, #0a0a0a); border: 2px solid var(--rasta-gold); box-shadow: 0 2px 10px rgba(0,0,0,.6);
+}
+input.fader::-moz-range-track{ height: 8px; border-radius: 999px; background: linear-gradient(90deg, var(--rasta-green), var(--rasta-gold), var(--rasta-red)); }
+input.fader::-moz-range-thumb{ width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(180deg, #2a2a2a, #0a0a0a); border: 2px solid var(--rasta-gold); }
+.fader-scale{
+  position:absolute; right: -6px; top:0; bottom:0; display:flex; flex-direction:column; justify-content:space-between;
+  font-family:'JetBrains Mono', monospace; font-size: 9px; color: var(--text-dim); padding: 4px 0;
+}
+
+.readout{ flex:1; }
+.readout-value{ font-family:'JetBrains Mono', monospace; font-size: 46px; font-weight: 700; color: var(--rasta-gold); text-shadow: 0 0 22px var(--gold-glow); }
+.readout-unit{ font-size:18px; color: var(--text-dim); margin-left:2px; }
+.readout-label{ margin:0; text-transform: uppercase; letter-spacing: 1.5px; font-size: 11px; color: var(--text-dim); }
+.readout-note{ margin:8px 0 0; font-size: 12px; line-height:1.4; color: var(--text-dim); max-width: 220px; }
+
+.lock-row{ padding: 16px 0; }
+.lock-toggle{
+  width:100%; display:flex; align-items:center; gap:14px;
+  background: rgba(255,255,255,0.03); border: 1px solid var(--panel-edge); border-radius: var(--radius-md);
+  padding: 14px 16px; color: var(--text-warm); cursor:pointer; text-align:left;
+}
+.lock-toggle[aria-pressed="true"]{ border-color: var(--rasta-gold); background: rgba(246,193,11,0.08); }
+.lock-icon{ font-size: 22px; }
+.lock-text strong{ display:block; font-size: 14px; }
+.lock-text small{ color: var(--text-dim); font-size: 11.5px; }
+
+.theme-section{ padding: 6px 0 4px; }
+.theme-header{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 10px; }
+.theme-header h2{ font-size:14px; margin:0; }
+.theme-hint{ font-size: 10.5px; color: var(--text-dim); }
+.theme-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.theme-card{
+  position:relative; border-radius: var(--radius-md); border: 1.5px solid transparent;
+  padding: 10px 8px 8px; background: rgba(255,255,255,0.03); cursor:pointer; text-align:center;
+}
+.theme-card.active{ border-color: var(--rasta-gold); }
+.theme-card.locked{ opacity:.45; cursor:not-allowed; }
+.swatch{ height: 30px; border-radius: 8px; margin-bottom: 8px; }
+.theme-card span{ font-size: 10.5px; color: var(--text-warm); display:block; }
+.theme-card .lock-mark{ position:absolute; top:6px; right:6px; font-size:10px; }
+
+.notice{ margin-top: 16px; padding: 12px 14px; border-radius: var(--radius-md); border: 1px dashed var(--panel-edge); background: rgba(255,255,255,0.02); }
+.notice p{ margin:0; font-size: 11.5px; line-height:1.5; color: var(--text-dim); }
+
+.close-panel{
+  width:100%; margin-top: 18px; padding: 14px; border:none; border-radius: 999px;
+  background: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  color:#0a0a0a; font-weight:700; font-size: 14px; cursor:pointer;
+}
+
+.powered-by{
+  position: fixed; right: 12px; bottom: 8px; z-index: 1000002;
+  font-size: 10.5px; color: var(--text-dim); background: rgba(6,11,8,0.55);
+  padding: 4px 9px; border-radius: 999px; pointer-events:none;
+}
+.powered-by strong{ color: var(--rasta-gold); }
+
+@media (max-width: 340px){ .theme-grid{ grid-template-columns: repeat(2, 1fr); } }</style>
+</head><body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#060B08" />
+<title>Extra Dim — Roots Screen Filter</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- THE DIM OVERLAY: sits above everything, never blocks touches -->
+  <div id="dimOverlay" aria-hidden="true">
+    <div class="band band-left"></div>
+    <div class="band band-mid"></div>
+    <div class="band band-right"></div>
+    <div class="grain"></div>
+  </div>
+
+  <!-- FLOATING LAUNCHER -->
+  <button id="launcher" class="launcher" aria-label="Open Extra Dim controls">
+    <span class="launcher-ring"></span>
+    <span class="launcher-dot"></span>
+  </button>
+
+  <!-- CONTROL PANEL -->
+  <main id="panel" class="panel" role="dialog" aria-label="Extra Dim controls">
+
+    <header class="panel-header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <i class="dot red"></i><i class="dot gold"></i><i class="dot green"></i>
+        </span>
+        <div>
+          <h1>Extra&nbsp;Dim</h1>
+          <p class="tagline">roots screen filter</p>
+        </div>
+      </div>
+      <div class="status-pill" id="statusPill">
+        <span class="pulse"></span>
+        <span id="statusText">checking…</span>
+      </div>
+    </header>
+
+    <section class="fader-section">
+      <div class="fader-track-wrap">
+        <input
+          id="dimRange"
+          class="fader"
+          type="range"
+          min="0"
+          max="85"
+          step="1"
+          value="35"
+          aria-label="Dimness percentage"
+          orient="vertical"
+        />
+        <div class="fader-scale" aria-hidden="true">
+          <span>85</span><span>60</span><span>35</span><span>10</span><span>0</span>
+        </div>
+      </div>
+
+      <div class="readout">
+        <span class="readout-value" id="dimValue">35</span><span class="readout-unit">%</span>
+        <p class="readout-label">dimness</p>
+        <p class="readout-note">capped below full screen brightness so content always stays readable</p>
+      </div>
+    </section>
+
+    <section class="lock-row">
+      <button id="lockToggle" class="lock-toggle" aria-pressed="false">
+        <span class="lock-icon" id="lockIcon">🔓</span>
+        <span class="lock-text">
+          <strong id="lockLabel">Keep dim on</strong>
+          <small id="lockSub">stays active across reloads &amp; screen wake</small>
+        </span>
+      </button>
+    </section>
+
+    <section class="theme-section">
+      <div class="theme-header">
+        <h2>Themes</h2>
+        <span class="theme-hint" id="themeHint">roots is always available offline</span>
+      </div>
+      <div class="theme-grid" id="themeGrid"></div>
+    </section>
+
+    <section class="notice">
+      <p><strong>Good to know:</strong> Extra Dim dims everything rendered inside this app's own screen. Drawing over other apps or the notification shade needs a native Android overlay permission — that part needs a native shim added to whatever wraps this into an APK.</p>
+    </section>
+
+    <button id="closePanel" class="close-panel">Done — dim it</button>
+  </main>
+
+  <div class="powered-by">powered by <strong>BENA</strong></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+<script>(function () {
+  "use strict";
+
+  const STORAGE_KEY = "extraDim.state.v1";
+  const MAX_DIM = 85; // hard cap so dim always stays below full screen brightness
+
+  const THEMES = {
+    roots:      { name: "Roots",       colors: ["#D62828", "#F6C10B", "#0B8A3F"], builtIn: true },
+    sunsetDub:  { name: "Sunset Dub",  colors: ["#FF5E3A", "#FFB338", "#7A1E3C"], downloadable: true },
+    deepForest: { name: "Deep Forest", colors: ["#0B3D2E", "#2E7D32", "#0B8A3F"], downloadable: true },
+    oceanRoots: { name: "Ocean Roots", colors: ["#0B3954", "#087E8B", "#0B8A3F"], downloadable: true },
+    fireEmber:  { name: "Fire Ember",  colors: ["#7A0C0C", "#D62828", "#F6931E"], downloadable: true }
+  };
+
+  let state = { theme: "roots", dimness: 35, locked: false, downloaded: ["roots"] };
+
+  const $ = (id) => document.getElementById(id);
+  const overlay = $("dimOverlay");
+  const panel = $("panel");
+  const launcher = $("launcher");
+  const closeBtn = $("closePanel");
+  const dimRange = $("dimRange");
+  const dimValue = $("dimValue");
+  const lockToggle = $("lockToggle");
+  const lockIcon = $("lockIcon");
+  const lockLabel = $("lockLabel");
+  const lockSub = $("lockSub");
+  const themeGrid = $("themeGrid");
+  const themeHint = $("themeHint");
+  const statusPill = $("statusPill");
+  const statusText = $("statusText");
+
+  let wakeLock = null;
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) state = Object.assign(state, JSON.parse(raw));
+    } catch (e) { console.warn("Extra Dim: could not read saved settings.", e); }
+  }
+  function saveState() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch (e) { console.warn("Extra Dim: could not save settings.", e); }
+  }
+
+  function applyDimness(value) {
+    const clamped = Math.min(MAX_DIM, Math.max(0, Number(value)));
+    state.dimness = clamped;
+    document.documentElement.style.setProperty("--dim-amount", clamped / 100);
+    dimRange.value = clamped;
+    dimValue.textContent = clamped;
+  }
+
+  function applyTheme(key) {
+    const theme = THEMES[key] || THEMES.roots;
+    state.theme = THEMES[key] ? key : "roots";
+    const [a, b, c] = theme.colors;
+    const root = document.documentElement.style;
+    root.setProperty("--theme-a", a);
+    root.setProperty("--theme-b", b);
+    root.setProperty("--theme-c", c);
+    renderThemeGrid();
+  }
+
+  function isUnlocked(key) {
+    const t = THEMES[key];
+    if (t.builtIn) return true;
+    return state.downloaded.includes(key) || navigator.onLine;
+  }
+
+  function renderThemeGrid() {
+    themeGrid.innerHTML = "";
+    Object.keys(THEMES).forEach((key) => {
+      const theme = THEMES[key];
+      const unlocked = isUnlocked(key);
+      const owned = state.downloaded.includes(key);
+
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "theme-card" + (state.theme === key ? " active" : "") + (!unlocked ? " locked" : "");
+      card.setAttribute("aria-pressed", state.theme === key ? "true" : "false");
+      card.disabled = !unlocked;
+
+      const swatch = document.createElement("div");
+      swatch.className = "swatch";
+      swatch.style.background = `linear-gradient(90deg, ${theme.colors.join(",")})`;
+      card.appendChild(swatch);
+
+      const label = document.createElement("span");
+      label.textContent = !theme.builtIn && unlocked && !owned ? theme.name + " ↓" : theme.name;
+      card.appendChild(label);
+
+      if (!theme.builtIn && !owned) {
+        const mark = document.createElement("span");
+        mark.className = "lock-mark";
+        mark.textContent = unlocked ? "⬇" : "🔒";
+        card.appendChild(mark);
+      }
+
+      card.addEventListener("click", () => {
+        if (!unlocked) return;
+        if (!owned) state.downloaded.push(key);
+        applyTheme(key);
+        saveState();
+      });
+
+      themeGrid.appendChild(card);
+    });
+
+    themeHint.textContent = navigator.onLine
+      ? "browse & download more themes"
+      : "offline — only downloaded themes are shown unlocked";
+  }
+
+  async function acquireWakeLock() {
+    if (!state.locked) return;
+    try {
+      if ("wakeLock" in navigator) {
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener("release", () => {
+          if (state.locked && document.visibilityState === "visible") acquireWakeLock();
+        });
+      }
+    } catch (e) { console.warn("Extra Dim: wake lock unavailable.", e); }
+  }
+  function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+  }
+
+  function setLocked(locked) {
+    state.locked = locked;
+    lockToggle.setAttribute("aria-pressed", locked ? "true" : "false");
+    lockIcon.textContent = locked ? "🔒" : "🔓";
+    lockLabel.textContent = locked ? "Dim is locked on" : "Keep dim on";
+    lockSub.textContent = locked
+      ? "won't turn off on its own — unlock here to release it"
+      : "stays active across reloads & screen wake";
+    saveState();
+    if (locked) acquireWakeLock(); else releaseWakeLock();
+  }
+
+  function updateOnlineStatus() {
+    const online = navigator.onLine;
+    statusPill.classList.toggle("offline", !online);
+    statusText.textContent = online ? "online" : "offline mode";
+    renderThemeGrid();
+  }
+
+  function openPanel() { panel.classList.add("open"); }
+  function collapsePanel() { panel.classList.remove("open"); }
+
+  function bindEvents() {
+    launcher.addEventListener("click", () => panel.classList.contains("open") ? collapsePanel() : openPanel());
+    closeBtn.addEventListener("click", collapsePanel);
+
+    dimRange.addEventListener("input", (e) => { applyDimness(e.target.value); saveState(); });
+    lockToggle.addEventListener("click", () => setLocked(!state.locked));
+
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && state.locked) {
+        acquireWakeLock();
+        applyDimness(state.dimness);
+        applyTheme(state.theme);
+      }
+    });
+
+    window.addEventListener("beforeunload", (e) => {
+      if (state.locked) { e.preventDefault(); e.returnValue = ""; }
+    });
+  }
+
+  function init() {
+    loadState();
+    applyDimness(state.dimness);
+    applyTheme(state.theme);
+    setLocked(state.locked);
+    updateOnlineStatus();
+    bindEvents();
+
+    if (!localStorage.getItem(STORAGE_KEY)) { openPanel(); saveState(); }
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();</script>
+</body></html>
