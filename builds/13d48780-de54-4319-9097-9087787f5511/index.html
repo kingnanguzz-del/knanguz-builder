@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BenJulie</title>
+</head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const chapters = [
+  {
+    id: 1,
+    title: "The Day Everything Changed",
+    icon: "🎓",
+    story: `It was an ordinary Tuesday at Etti College when Benard first saw Julie. 
+    The morning sun streamed through the corridor windows, and there she was — 
+    laughing with her friends, completely unaware that she had just stopped time 
+    for one person in that hallway. From that moment, nothing was ever ordinary again.`,
+  },
+  {
+    id: 2,
+    title: "Our First Hello",
+    icon: "💬",
+    story: `It took courage — the kind that makes your heart pound so loud you're 
+    sure everyone around you can hear it. But Benard walked over anyway. 
+    "Hi, I'm Benard." Three words that changed everything. Julie smiled, 
+    and the whole world rearranged itself into something more beautiful.`,
+  },
+  {
+    id: 3,
+    title: "Etti College Memories",
+    icon: "🏫",
+    story: `The corridors of Etti College became their world. Every class, every 
+    break time, every shared laugh between lectures. They'd sit together and 
+    talk about everything and nothing — dreams, fears, silly jokes, 
+    future plans. Etti College wasn't just a school anymore. It was where 
+    their story began.`,
+  },
+  {
+    id: 4,
+    title: "When I Knew",
+    icon: "💡",
+    story: `There was a moment — quiet, unexpected — when Benard knew. 
+    Julie was mid-sentence about something completely ordinary, 
+    and the thought arrived without warning: 
+    "I could listen to her forever." 
+    That was it. That was the moment. 
+    Not fireworks. Just a quiet, certain, beautiful knowing.`,
+  },
+  {
+    id: 5,
+    title: "My Deepest Confession",
+    icon: "💌",
+    story: `Julie, if you're reading this — this is real. 
+    You are the reason mornings feel worth waking up for. 
+    The way you laugh, the way you think, the way you make 
+    even the hardest days feel lighter just by being in them — 
+    I have never met anyone like you. 
+    I don't just like you, Julie. 
+    I am completely, honestly, deeply in love with you. 
+    And I would choose you, every single day, forever.`,
+    isConfession: true,
+  },
+];
+
+const letters = [
+  {
+    date: "Our first week at Etti",
+    content: `Dear Julie,
+    
+I don't know if I'll ever send this but writing it feels necessary. 
+I think about our conversations constantly. You said something today 
+about your dreams and I realized — I want to be part of whatever 
+future you're building. 
+
+Yours always,
+Benard 💚`,
+  },
+  {
+    date: "A random Tuesday",
+    content: `My dearest Julie,
+
+Today you laughed at something I said and I forgot every word 
+I was about to speak next. You do that to me — make me forget 
+everything except how lucky I am to know you.
+
+With all my heart,
+Benard 💚`,
+  },
+  {
+    date: "The night I couldn't sleep",
+    content: `Julie,
+
+It's late and I'm still thinking about you. I keep wondering 
+if you know how special you are. Not just to me — to every 
+room you walk into. You light things up without even trying.
+
+But especially to me, Julie. Especially to me.
+
+Forever yours,
+Benard 💚`,
+  },
+  {
+    date: "My final, truest letter",
+    content: `My beautiful Julie,
+
+I have written and deleted this a hundred times. 
+So let me just say it plainly:
+
+I love you. 
+I loved you in those Etti College hallways.
+I love you right now.
+I will love you in every version of the future I can imagine.
+
+You are my favorite person on this entire earth.
+Please know that. Always.
+
+All my love, every single piece of it,
+Benard 💚`,
+  },
+];
+
+function FloatingHeart({ style }) {
+  return (
+    <div className="floating-heart" style={style}>❤️</div>
+  );
+}
+
+function App() {
+  const [screen, setScreen] = useState("home");
+  const [activeChapter, setActiveChapter] = useState(null);
+  const [activeLetter, setActiveLetter] = useState(null);
+  const [hearts, setHearts] = useState([]);
+  const [confessionRevealed, setConfessionRevealed] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newHeart = {
+        id: Date.now(),
+        left: Math.random() * 90 + "%",
+        animDuration: (Math.random() * 3 + 3) + "s",
+        size: (Math.random() * 16 + 12) + "px",
+      };
+      setHearts(h => [...h.slice(-8), newHeart]);
+    }, 1200);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%)",
+      fontFamily: "Georgia, serif",
+      color: "#fff",
+      overflow: "hidden",
+      position: "relative",
+    }}>
+
+      {/* Floating hearts */}
+      <style>{`
+        @keyframes floatUp {
+          0% { transform: translateY(100vh) scale(0); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 0.6; }
+          100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+        .floating-heart {
+          position: fixed;
+          bottom: 0;
+          animation: floatUp linear forwards;
+          pointer-events: none;
+          z-index: 0;
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.6s ease forwards; }
+        .card {
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 16px;
+          backdrop-filter: blur(10px);
+          cursor: pointer;
+          transition: all 0.3s ease;
+          padding: 16px;
+          margin-bottom: 12px;
+        }
+        .card:active { transform: scale(0.97); background: rgba(255,255,255,0.14); }
+        .btn {
+          background: linear-gradient(135deg, #e91e8c, #c2185b);
+          border: none;
+          border-radius: 50px;
+          color: white;
+          padding: 12px 28px;
+          font-size: 15px;
+          font-family: Georgia, serif;
+          cursor: pointer;
+          transition: all 0.3s;
+          box-shadow: 0 4px 20px rgba(233,30,140,0.4);
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-secondary {
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.3);
+          border-radius: 50px;
+          color: white;
+          padding: 10px 22px;
+          font-size: 14px;
+          font-family: Georgia, serif;
+          cursor: pointer;
+        }
+        .scroll-area {
+          overflow-y: auto;
+          max-height: 65vh;
+          padding-right: 4px;
+        }
+      `}</style>
+
+      {hearts.map(h => (
+        <FloatingHeart key={h.id} style={{
+          left: h.left,
+          fontSize: h.size,
+          animationDuration: h.animDuration,
+        }} />
+      ))}
+
+      <div style={{ position: "relative", zIndex: 1, padding: "20px" }}>
+
+        {/* HOME */}
+        {screen === "home" && (
+          <div className="fade-in" style={{ textAlign: "center", paddingTop: "40px" }}>
+            <div className="pulse" style={{ fontSize: "64px", marginBottom: "16px" }}>💕</div>
+            <h1 style={{ fontSize: "28px", fontWeight: "bold", marginBottom: "8px", color: "#f8a4d8" }}>
+              Benard & Julie
+            </h1>
+            <p style={{ color: "#c084fc", fontSize: "14px", marginBottom: "6px" }}>
+              A love story that began at
+            </p>
+            <p style={{ color: "#f472b6", fontSize: "16px", fontWeight: "bold", marginBottom: "40px" }}>
+              🎓 Etti College
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px", maxWidth: "320px", margin: "0 auto" }}>
+              <button className="btn" onClick={() => setScreen("chapters")}>
+                📖 Our Love Story
+              </button>
+              <button className="btn" onClick={() => setScreen("letters")}>
+                💌 Love Letters
+              </button>
+              <button className="btn" onClick={() => setScreen("confession")}>
+                💝 My Confession to Julie
+              </button>
+              <button className="btn" onClick={() => setScreen("memories")}>
+                🏫 Etti Memories
+              </button>
+            </div>
+
+            <p style={{ marginTop: "50px", color: "rgba(255,255,255,0.3)", fontSize: "11px" }}>
+              Made with 💚 by Benard, for Julie
+            </p>
+          </div>
+        )}
+
+        {/* CHAPTERS */}
+        {screen === "chapters" && !activeChapter && (
+          <div className="fade-in">
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
+              <button className="btn-secondary" onClick={() => setScreen("home")}>← Back</button>
+              <h2 style={{ fontSize: "20px", color: "#f8a4d8" }}>📖 Our Love Story</h2>
+            </div>
+            <div className="scroll-area">
+              {chapters.map(ch => (
+                <div key={ch.id} className="card" onClick={() => setActiveChapter(ch)}>
+                  <div style={{ fontSize: "28px", marginBottom: "8px" }}>{ch.icon}</div>
+                  <p style={{ fontSize: "16px", fontWeight: "bold", color: "#f8a4d8" }}>{ch.title}</p>
+                  <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", marginTop: "4px" }}>
+                    Chapter {ch.id} — tap to read
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ACTIVE CHAPTER */}
+        {screen === "chapters" && activeChapter && (
+          <div className="fade-in">
+            <button className="btn-secondary" onClick={() => setActiveChapter(null)} style={{ marginBottom: "20px" }}>
+              ← Back to chapters
+            </button>
+            <div style={{ fontSize: "48px", textAlign: "center", marginBottom: "12px" }}>{activeChapter.icon}</div>
+            <h2 style={{ fontSize: "22px", color: "#f8a4d8", textAlign: "center", marginBottom: "20px" }}>
+              {activeChapter.title}
+            </h2>
+            <div style={{
+              background: "rgba(255,255,255,0.07)",
+              borderRadius: "16px",
+              padding: "20px",
+              lineHeight: "1.8",
+              fontSize: "15px",
+              color: "rgba(255,255,255,0.9)",
+              whiteSpace: "pre-line",
+            }}>
+              {activeChapter.story}
+            </div>
+            {activeChapter.isConfession && (
+              <div style={{ textAlign: "center", marginTop: "20px" }}>
+                <div style={{ fontSize: "32px" }}>💝</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* LOVE LETTERS */}
+        {screen === "letters" && !activeLetter && (
+          <div className="fade-in">
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
+              <button className="btn-secondary" onClick={() => setScreen("home")}>← Back</button>
+              <h2 style={{ fontSize: "20px", color: "#f8a4d8" }}>💌 Love Letters</h2>
+            </div>
+            <div className="scroll-area">
+              {letters.map((letter, i) => (
+                <div key={i} className="card" onClick={() => setActiveLetter(letter)}>
+                  <div style={{ fontSize: "24px", marginBottom: "6px" }}>💌</div>
+                  <p style={{ fontSize: "15px", fontWeight: "bold", color: "#f8a4d8" }}>Letter {i + 1}</p>
+                  <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", marginTop: "2px" }}>{letter.date}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ACTIVE LETTER */}
+        {screen === "letters" && activeLetter && (
+          <div className="fade-in">
+            <button className="btn-secondary" onClick={() => setActiveLetter(null)} style={{ marginBottom: "20px" }}>
+              ← Back to letters
+            </button>
+            <div style={{ fontSize: "40px", textAlign: "center", marginBottom: "8px" }}>💌</div>
+            <p style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: "12px", marginBottom: "16px" }}>
+              {activeLetter.date}
+            </p>
+            <div style={{
+              background: "rgba(255,255,255,0.07)",
+              borderRadius: "16px",
+              padding: "20px",
+              lineHeight: "1.9",
+              fontSize: "15px",
+              color: "rgba(255,255,255,0.9)",
+              whiteSpace: "pre-line",
+              fontStyle: "italic",
+            }}>
+              {activeLetter.content}
+            </div>
+          </div>
+        )}
+
+        {/* CONFESSION */}
+        {screen === "confession" && (
+          <div className="fade-in" style={{ textAlign: "center" }}>
+            <button className="btn-secondary" onClick={() => setScreen("home")} style={{ marginBottom: "24px" }}>
+              ← Back
+            </button>
+            <div style={{ fontSize: "56px", marginBottom: "16px" }} className="pulse">💝</div>
+            <h2 style={{ fontSize: "22px", color: "#f8a4d8", marginBottom: "8px" }}>
+              Julie, this is for you
+            </h2>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "28px" }}>
+              From Benard, with everything he has
+            </p>
+
+            {!confessionRevealed ? (
+              <div>
+                <p style={{ color: "rgba(255,255,255,0.6)", marginBottom: "24px", lineHeight: "1.7" }}>
+                  There are things I've wanted to say for a long time. 
+                  Things that feel too big for a normal conversation.
+                  Are you ready to hear them?
+                </p>
+                <button className="btn" onClick={() => setConfessionRevealed(true)}>
+                  💌 Open My Heart
+                </button>
+              </div>
+            ) : (
+              <div className="fade-in" style={{
+                background: "rgba(233,30,140,0.1)",
+                border: "1px solid rgba(233,30,140,0.3)",
+                borderRadius: "20px",
+                padding: "24px",
+                lineHeight: "1.9",
+                fontSize: "16px",
+                textAlign: "left",
+                whiteSpace: "pre-line",
+              }}>
+                {`Julie,
+
+From the very first moment I saw you at Etti College, 
+something shifted inside me that has never shifted back.
+
+You are the most genuine, beautiful, and remarkable 
+person I have ever known. Not just on the outside — 
+though you are breathtaking — but in the way you think, 
+the way you care, the way you make everyone around you 
+feel seen and valued.
+
+I have tried to find words big enough for what I feel 
+and I keep falling short. So let me just say it simply:
+
+I love you, Julie.
+
+Not as a passing feeling.
+Not as something I'm unsure about.
+
+As the most certain thing I have ever known.
+
+You walked into my life at Etti College and 
+quietly became the best part of it.
+
+I would choose you a thousand times over.
+In every version of my life — I would always 
+find my way to you.
+
+Forever and completely yours,
+Benard 💚`}
+                <div style={{ textAlign: "center", marginTop: "20px", fontSize: "32px" }}>
+                  💕❤️💕
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* MEMORIES */}
+        {screen === "memories" && (
+          <div className="fade-in">
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
+              <button className="btn-secondary" onClick={() => setScreen("home")}>← Back</button>
+              <h2 style={{ fontSize: "20px", color: "#f8a4d8" }}>🏫 Etti Memories</h2>
+            </div>
+            <div className="scroll-area">
+              {[
+                { icon: "☀️", memory: "Morning walks to class, hoping to cross paths in the corridor" },
+                { icon: "📚", memory: "Sharing notes and pretending it was just about the coursework" },
+                { icon: "😂", memory: "Laughing so hard during break time that tears came" },
+                { icon: "🌅", memory: "Those evenings after class when time felt like it slowed down" },
+                { icon: "💬", memory: "Conversations that started about nothing and lasted for hours" },
+                { icon: "🎒", memory: "Walking the same path home and neither of us minding the detour" },
+                { icon: "⭐", memory: "The moment Benard realized Etti College had given him the greatest gift — you" },
+              ].map((m, i) => (
+                <div key={i} className="card" style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+                  <span style={{ fontSize: "28px" }}>{m.icon}</span>
+                  <p style={{ fontSize: "14px", lineHeight: "1.7", color: "rgba(255,255,255,0.85)" }}>{m.memory}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+const rootElement = document.getElementById('root');
+const root = ReactDOM.createRoot(rootElement);
+root.render(React.createElement(App));
+</script>
+</body></html>
