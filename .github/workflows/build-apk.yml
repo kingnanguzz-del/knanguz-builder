@@ -15,7 +15,12 @@ jobs:
       APP_NAME: ${{ github.event.client_payload.app_name }}
       PACKAGE_ID: ${{ github.event.client_payload.package_id }}
       PAYLOAD_PATH: ${{ github.event.client_payload.payload_path }}
+      ZIP_PATH: ${{ github.event.client_payload.zip_path }}
       ICON_PATH: ${{ github.event.client_payload.icon_path }}
+      FRAMEWORK: ${{ github.event.client_payload.framework }}
+      BUILD_INSTALL: ${{ github.event.client_payload.build_install }}
+      BUILD_CMD: ${{ github.event.client_payload.build_cmd }}
+      BUILD_OUT_DIR: ${{ github.event.client_payload.build_out_dir }}
       CALLBACK_URL: ${{ github.event.client_payload.callback_url }}
       CALLBACK_SECRET: ${{ secrets.BUILD_CALLBACK_SECRET }}
 
@@ -53,11 +58,52 @@ jobs:
           npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap init "$APP_NAME" "$PACKAGE_ID" --web-dir=www
 
-      - name: Inject user code
+      - name: Inject web assets
         run: |
           set -e
-          cp "$PAYLOAD_PATH" mobile-project/www/index.html
-          echo "HTML injected successfully"
+          if [ -n "$ZIP_PATH" ] && [ -f "$ZIP_PATH" ]; then
+            echo "ZIP build detected — framework: $FRAMEWORK"
+            mkdir -p /tmp/project
+            unzip -o "$ZIP_PATH" -d /tmp/project
+
+            # Find root of project (handle zips with a wrapper folder)
+            ROOT=$(find /tmp/project -name "package.json" -not -path "*/node_modules/*" | head -1 | xargs dirname || echo "/tmp/project")
+            echo "Project root: $ROOT"
+            cd "$ROOT"
+
+            # Install dependencies if needed
+            if [ -n "$BUILD_INSTALL" ] && [ -f "package.json" ]; then
+              echo "Running: $BUILD_INSTALL"
+              eval "$BUILD_INSTALL"
+            fi
+
+            # Build if needed
+            if [ -n "$BUILD_CMD" ] && [ -f "package.json" ]; then
+              echo "Running: $BUILD_CMD"
+              eval "$BUILD_CMD" || true
+            fi
+
+            # Find output directory
+            OUT=""
+            for TRY in "$BUILD_OUT_DIR" dist build out public www; do
+              if [ -d "$TRY" ]; then OUT="$TRY"; break; fi
+            done
+
+            if [ -n "$OUT" ] && [ -d "$OUT" ]; then
+              echo "Copying $OUT to www"
+              cp -r "$OUT/." "$GITHUB_WORKSPACE/mobile-project/www/"
+            elif [ -f "index.html" ]; then
+              echo "Copying root HTML files to www"
+              cp -r . "$GITHUB_WORKSPACE/mobile-project/www/"
+            else
+              echo "No output found — copying everything to www"
+              cp -r . "$GITHUB_WORKSPACE/mobile-project/www/"
+            fi
+          else
+            echo "Code build — injecting index.html"
+            cp "$PAYLOAD_PATH" mobile-project/www/index.html
+          fi
+          echo "Web assets injected successfully"
 
       - name: Add Android platform
         working-directory: mobile-project
@@ -80,8 +126,6 @@ jobs:
       - name: Inject app icon
         run: |
           set -e
-
-          # All Android icon sizes needed
           declare -A SIZES=(
             ["mobile-project/android/app/src/main/res/mipmap-mdpi"]=48
             ["mobile-project/android/app/src/main/res/mipmap-hdpi"]=72
@@ -89,38 +133,26 @@ jobs:
             ["mobile-project/android/app/src/main/res/mipmap-xxhdpi"]=144
             ["mobile-project/android/app/src/main/res/mipmap-xxxhdpi"]=192
           )
-
-          # Decide which icon to use
           if [ -n "$ICON_PATH" ] && [ -f "$ICON_PATH" ]; then
             echo "Using user uploaded icon: $ICON_PATH"
-            SOURCE="$ICON_PATH"
-
-            # Convert any format (jpg/webp/png) to png first
-            convert "$SOURCE" /tmp/icon_source.png
-            SOURCE="/tmp/icon_source.png"
+            convert "$ICON_PATH" /tmp/icon_source.png
           else
-            echo "No user icon — generating default knanGuz icon"
+            echo "Generating default knanGuz icon"
             convert -size 1024x1024 xc:#0f172a \
               -fill "#065f46" -draw "circle 512,512 512,200" \
               -fill "#34d399" -font DejaVu-Sans-Bold \
               -pointsize 420 -gravity Center \
               -annotate 0 "kG" \
               /tmp/icon_source.png
-            SOURCE="/tmp/icon_source.png"
           fi
-
-          # Make it square by cropping to center
-          convert "$SOURCE" \
+          convert /tmp/icon_source.png \
             -gravity Center \
-            -extent "$(identify -format '%[fx:min(w,h)]x%[fx:min(w,h)]' "$SOURCE")" \
+            -extent "$(identify -format '%[fx:min(w,h)]x%[fx:min(w,h)]' /tmp/icon_source.png)" \
             /tmp/icon_square.png
-          SOURCE="/tmp/icon_square.png"
-
-          # Resize into every mipmap folder
           for DIR in "${!SIZES[@]}"; do
             SIZE="${SIZES[$DIR]}"
             mkdir -p "$DIR"
-            convert "$SOURCE" \
+            convert /tmp/icon_square.png \
               -resize "${SIZE}x${SIZE}" \
               -gravity Center \
               -extent "${SIZE}x${SIZE}" \
@@ -128,8 +160,7 @@ jobs:
             cp "${DIR}/ic_launcher.png" "${DIR}/ic_launcher_round.png"
             echo "Placed ${SIZE}px icon in $DIR"
           done
-
-          echo "All icons placed successfully"
+          echo "All icons placed"
 
       - name: Build APK with Gradle
         working-directory: mobile-project/android
@@ -146,25 +177,20 @@ jobs:
           ALIGNED_APK="app/build/outputs/apk/release/app-release-aligned.apk"
           SIGNED_APK="app/build/outputs/apk/release/${APP_NAME// /-}-signed.apk"
           KEYSTORE="knanguz-release.keystore"
-
           keytool -genkeypair -v \
             -keystore "$KEYSTORE" \
             -alias knanguzkey \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass knanguz123 -keypass knanguz123 \
             -dname "CN=knanGuz, OU=CloudBuild, O=knanGuz, L=Nairobi, S=Nairobi, C=KE"
-
           BUILD_TOOLS_DIR=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n1)
-
           "${BUILD_TOOLS_DIR}zipalign" -v -p 4 "$UNSIGNED_APK" "$ALIGNED_APK"
-
           "${BUILD_TOOLS_DIR}apksigner" sign \
             --ks "$KEYSTORE" \
             --ks-pass pass:knanguz123 \
             --key-pass pass:knanguz123 \
             --out "$SIGNED_APK" \
             "$ALIGNED_APK"
-
           echo "SIGNED_APK_PATH=mobile-project/android/${SIGNED_APK}" >> "$GITHUB_ENV"
 
       - name: Create GitHub Release with APK
@@ -173,7 +199,7 @@ jobs:
         with:
           tag_name: build-${{ env.BUILD_ID }}
           name: "knanGuz build ${{ env.BUILD_ID }} — ${{ env.APP_NAME }}"
-          body: "Automated cloud build for ${{ env.APP_NAME }} (${{ env.PACKAGE_ID }})."
+          body: "Automated build for ${{ env.APP_NAME }} (${{ env.PACKAGE_ID }}) — Framework: ${{ env.FRAMEWORK }}"
           files: ${{ env.SIGNED_APK_PATH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -201,7 +227,8 @@ jobs:
         run: |
           git config user.name "knanguz-bot"
           git config user.email "bot@knanguz.local"
-          git rm -f "$PAYLOAD_PATH" || true
+          [ -n "$PAYLOAD_PATH" ] && git rm -f "$PAYLOAD_PATH" || true
+          [ -n "$ZIP_PATH" ] && git rm -f "$ZIP_PATH" || true
           [ -n "$ICON_PATH" ] && git rm -f "$ICON_PATH" || true
           git commit -m "knanGuz: clean up payload for $BUILD_ID" || true
           git push || true
