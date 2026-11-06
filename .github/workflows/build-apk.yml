@@ -58,8 +58,6 @@ jobs:
       - name: Inject web assets
         run: |
           set -e
-
-          # Unpack build config string
           BUILD_INSTALL=$(echo "$BUILD_CONFIG" | cut -d'|' -f1)
           BUILD_CMD=$(echo "$BUILD_CONFIG" | cut -d'|' -f3)
           BUILD_OUT_DIR=$(echo "$BUILD_CONFIG" | cut -d'|' -f5)
@@ -69,25 +67,21 @@ jobs:
             mkdir -p /tmp/project
             unzip -o "$ZIP_PATH" -d /tmp/project
 
-            # Find project root (handles ZIPs with wrapper folders)
             ROOT=$(find /tmp/project -name "package.json" \
               -not -path "*/node_modules/*" | head -1 | xargs dirname 2>/dev/null || echo "/tmp/project")
             echo "Project root: $ROOT"
             cd "$ROOT"
 
-            # Install dependencies
             if [ -n "$BUILD_INSTALL" ] && [ -f "package.json" ]; then
               echo "Running: $BUILD_INSTALL"
               eval "$BUILD_INSTALL"
             fi
 
-            # Build project
             if [ -n "$BUILD_CMD" ] && [ -f "package.json" ]; then
               echo "Running: $BUILD_CMD"
               eval "$BUILD_CMD" || true
             fi
 
-            # Find and copy output to www
             OUT=""
             for TRY in "$BUILD_OUT_DIR" dist build out public www .; do
               if [ -d "$TRY" ] && [ "$(ls -A $TRY)" ]; then OUT="$TRY"; break; fi
@@ -128,43 +122,46 @@ jobs:
       - name: Inject app icon
         run: |
           set -e
-          declare -A SIZES=(
-            ["mobile-project/android/app/src/main/res/mipmap-mdpi"]=48
-            ["mobile-project/android/app/src/main/res/mipmap-hdpi"]=72
-            ["mobile-project/android/app/src/main/res/mipmap-xhdpi"]=96
-            ["mobile-project/android/app/src/main/res/mipmap-xxhdpi"]=144
-            ["mobile-project/android/app/src/main/res/mipmap-xxxhdpi"]=192
-          )
+          echo "ICON_PATH value: '$ICON_PATH'"
+          ls -la "builds/$BUILD_ID" || true
+
+          RES="mobile-project/android/app/src/main/res"
 
           if [ -n "$ICON_PATH" ] && [ -f "$ICON_PATH" ]; then
             echo "Using user uploaded icon: $ICON_PATH"
-            convert "$ICON_PATH" /tmp/icon_source.png
+            convert "${ICON_PATH}[0]" -background none /tmp/icon_raw.png
           else
-            echo "Generating default knanGuz icon"
+            echo "No user icon found — generating default knanGuz icon"
             convert -size 1024x1024 xc:#0f172a \
               -fill "#065f46" -draw "circle 512,512 512,200" \
               -fill "#34d399" -font DejaVu-Sans-Bold \
               -pointsize 420 -gravity Center \
               -annotate 0 "kG" \
-              /tmp/icon_source.png
+              /tmp/icon_raw.png
           fi
 
-          convert /tmp/icon_source.png \
-            -gravity Center \
-            -extent "$(identify -format '%[fx:min(w,h)]x%[fx:min(w,h)]' /tmp/icon_source.png)" \
+          # Crop to a perfect square (fills the frame, centered)
+          convert /tmp/icon_raw.png \
+            -resize 1024x1024^ -gravity Center -extent 1024x1024 \
             /tmp/icon_square.png
 
-          for DIR in "${!SIZES[@]}"; do
-            SIZE="${SIZES[$DIR]}"
+          # IMPORTANT: remove Capacitor's adaptive icon definition.
+          # Android 8+ prefers it over the PNGs, which is why custom
+          # icons never showed up. Deleting it forces Android to use ours.
+          rm -rf "$RES/mipmap-anydpi-v26"
+          echo "Removed adaptive icon definition"
+
+          for ENTRY in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            DENSITY="${ENTRY%%:*}"
+            SIZE="${ENTRY##*:}"
+            DIR="$RES/mipmap-$DENSITY"
             mkdir -p "$DIR"
-            convert /tmp/icon_square.png \
-              -resize "${SIZE}x${SIZE}" \
-              -gravity Center \
-              -extent "${SIZE}x${SIZE}" \
-              "${DIR}/ic_launcher.png"
-            cp "${DIR}/ic_launcher.png" "${DIR}/ic_launcher_round.png"
-            echo "Placed ${SIZE}px icon in $DIR"
+            convert /tmp/icon_square.png -resize "${SIZE}x${SIZE}" "$DIR/ic_launcher.png"
+            cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_round.png"
+            cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_foreground.png"
+            echo "Placed ${SIZE}px icon in mipmap-$DENSITY"
           done
+
           echo "All icons placed"
 
       - name: Build APK with Gradle
