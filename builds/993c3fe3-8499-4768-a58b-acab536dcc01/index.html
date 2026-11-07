@@ -1,0 +1,1074 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Knan</title><style>/* ==========================================================================
+   CSS CUSTOM PROPERTIES & DYNAMIC THEMING
+   ========================================================================== */
+:root {
+    --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-heading: 'Space Grotesk', sans-serif;
+
+    /* Dark Theme Colors (Default) */
+    --bg-base: #0a0d14;
+    --bg-surface: rgba(18, 24, 38, 0.75);
+    --bg-surface-border: rgba(255, 255, 255, 0.08);
+    --bg-input: rgba(10, 13, 20, 0.6);
+    
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+
+    --primary: #f59e0b; /* Amber Hustle Accent */
+    --primary-hover: #d97706;
+    --primary-glow: rgba(245, 158, 11, 0.25);
+    
+    --accent: #10b981; /* Emerald Green */
+    --accent-glow: rgba(16, 185, 129, 0.2);
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --blur-glass: blur(16px);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="light"] {
+    --bg-base: #f8fafc;
+    --bg-surface: rgba(255, 255, 255, 0.85);
+    --bg-surface-border: rgba(0, 0, 0, 0.08);
+    --bg-input: #ffffff;
+    
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+
+    --primary: #ea580c;
+    --primary-hover: #c2410c;
+    --primary-glow: rgba(234, 88, 12, 0.15);
+}
+
+/* Base Styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.6;
+    padding: 1.5rem;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* App Layout Grid */
+.app-header {
+    max-width: 1280px;
+    margin: 0 auto 1.5rem auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: var(--bg-surface);
+    backdrop-filter: var(--blur-glass);
+    border: 1px solid var(--bg-surface-border);
+    border-radius: var(--radius-lg);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: #fff;
+    box-shadow: 0 4px 14px var(--primary-glow);
+}
+
+.brand h1 {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    letter-spacing: -0.5px;
+}
+
+.brand h1 span {
+    color: var(--primary);
+    font-weight: 400;
+}
+
+.subtitle {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: var(--transition);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--bg-surface-border);
+}
+
+.btn-outline:hover {
+    background: var(--bg-surface-border);
+}
+
+.icon-btn, .icon-btn-sm {
+    background: transparent;
+    border: 1px solid var(--bg-surface-border);
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.icon-btn { width: 42px; height: 42px; font-size: 1.2rem; }
+.icon-btn-sm { width: 32px; height: 32px; font-size: 1rem; }
+.icon-btn:hover { background: var(--bg-surface-border); }
+
+/* Main Grid Layout Container Query Target */
+.app-grid {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.5rem;
+}
+
+/* Sidebar Styles */
+.sidebar-card {
+    background: var(--bg-surface);
+    backdrop-filter: var(--blur-glass);
+    border: 1px solid var(--bg-surface-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    height: fit-content;
+}
+
+.badge-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--primary);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.profile-title {
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+}
+
+.profile-bio {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.25rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.stat-box {
+    background: var(--bg-input);
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+    text-align: center;
+    border: 1px solid var(--bg-surface-border);
+}
+
+.stat-number {
+    display: block;
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--primary);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.divider {
+    border: none;
+    height: 1px;
+    background: var(--bg-surface-border);
+    margin: 1.25rem 0;
+}
+
+.tech-stack-container h3 {
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--accent);
+}
+
+.tech-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.tech-tags span {
+    font-size: 0.75rem;
+    background: var(--bg-input);
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--bg-surface-border);
+    color: var(--text-secondary);
+}
+
+/* Audio Visualizer */
+.audio-widget {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-input);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--bg-surface-border);
+}
+
+.audio-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.equalizer {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 16px;
+}
+
+.equalizer .bar {
+    width: 3px;
+    background: var(--primary);
+    animation: bounce 1.2s infinite ease-in-out alternate;
+}
+
+.equalizer .bar:nth-child(2) { animation-delay: 0.2s; }
+.equalizer .bar:nth-child(3) { animation-delay: 0.4s; }
+.equalizer .bar:nth-child(4) { animation-delay: 0.1s; }
+.equalizer .bar:nth-child(5) { animation-delay: 0.3s; }
+
+@keyframes bounce {
+    0% { height: 3px; }
+    100% { height: 16px; }
+}
+
+/* Content Area & Navigation Tabs */
+.content-area {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--bg-surface-border);
+    padding-bottom: 0.5rem;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tab-btn.active {
+    background: var(--bg-surface);
+    color: var(--primary);
+    border: 1px solid var(--bg-surface-border);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Feed Headers & Filters */
+.feed-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.filter-pills {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.pill {
+    background: var(--bg-surface);
+    border: 1px solid var(--bg-surface-border);
+    color: var(--text-secondary);
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.pill.active, .pill:hover {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+/* Story Cards Grid & Container Queries */
+.stories-grid, .diary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.25rem;
+}
+
+.story-card, .diary-card {
+    background: var(--bg-surface);
+    backdrop-filter: var(--blur-glass);
+    border: 1px solid var(--bg-surface-border);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: var(--transition);
+}
+
+.story-card:hover, .diary-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary-glow);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.card-tag {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--primary);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.card-title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.card-body {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--bg-surface-border);
+    padding-top: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Diary Specific Rules */
+.diary-toolbar {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 1;
+    position: relative;
+    min-width: 200px;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.6rem 1rem 0.6rem 2.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--bg-surface-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    outline: none;
+}
+
+.privacy-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 22px;
+}
+
+.switch input { opacity: 0; width: 0; height: 0; }
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--bg-surface-border);
+    transition: .4s;
+    border-radius: 22px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px; width: 16px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider { background-color: var(--primary); }
+input:checked + .slider:before { transform: translateX(16px); }
+
+/* Privacy Blur Effect */
+.blurred .card-body {
+    filter: blur(5px);
+    user-select: none;
+    transition: filter 0.3s ease;
+}
+
+/* Native HTML5 Glass Dialog */
+::backdrop {
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
+}
+
+.glass-modal {
+    margin: auto;
+    border: 1px solid var(--bg-surface-border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-base);
+    color: var(--text-primary);
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.form-group input, .form-group select, .form-group textarea {
+    padding: 0.6rem 0.8rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--bg-surface-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: inherit;
+    outline: none;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 850px) {
+    .app-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style></head><body><!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knan | Eldoret Survival Chronicles & Ghetto Diary</title>
+    <!-- Google Fonts & Remix Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Header & Navigation -->
+    <header class="app-header">
+        <div class="brand">
+            <div class="avatar"><i class="ri-user-4-fill"></i></div>
+            <div>
+                <h1>KNAN<span>.eldoret</span></h1>
+                <p class="subtitle">Hustle Logic • Ghetto Survival • Eldoret City</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button id="themeToggleBtn" class="icon-btn" title="Toggle Theme">
+                <i class="ri-moon-clear-line"></i>
+            </button>
+            <button id="openModalBtn" class="btn btn-primary">
+                <i class="ri-edit-box-line"></i> Log Entry
+            </button>
+        </div>
+    </header>
+
+    <!-- Main App Container -->
+    <main class="app-grid">
+        
+        <!-- Left Sidebar: Profile & Tech Stack -->
+        <aside class="sidebar-card">
+            <div class="badge-tag"><i class="ri-map-pin-2-fill"></i> Eldoret, Kenya</div>
+            <h2 class="profile-title">Knan's Daily Playbook</h2>
+            <p class="profile-bio">
+                Navigating the raw streets of Eldoret—from the busy Uganda Road mechanics to late-night coding sessions in Huruma. Zero excuses, 100% hustle.
+            </p>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-number">300+</span>
+                    <span class="stat-label">Daily Hustles</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">Resilience</span>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <!-- ICT Specs / HTML, CSS, JS Modern Features Badge -->
+            <div class="tech-stack-container">
+                <h3><i class="ri-code-s-slash-line"></i> Modern Web Stack</h3>
+                <div class="tech-tags">
+                    <span>HTML5 Native Modal</span>
+                    <span>CSS Container Queries</span>
+                    <span>LocalStorage API</span>
+                    <span>Glassmorphism UI</span>
+                    <span>ES6+ Modules</span>
+                </div>
+            </div>
+
+            <!-- Audio Equalizer Visualizer Simulation -->
+            <div class="audio-widget">
+                <div class="audio-info">
+                    <i class="ri-radio-2-line"></i>
+                    <span>Street Beats Radio</span>
+                </div>
+                <div class="equalizer">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Content Section -->
+        <section class="content-area">
+            
+            <!-- Navigation Tabs -->
+            <nav class="nav-tabs" role="tablist">
+                <button class="tab-btn active" data-tab="chronicles">
+                    <i class="ri-compass-3-line"></i> Street Chronicles
+                </button>
+                <button class="tab-btn" data-tab="diary">
+                    <i class="ri-book-3-line"></i> Personal Diary
+                </button>
+            </nav>
+
+            <!-- TAB 1: Street Chronicles Feed -->
+            <div id="chroniclesTab" class="tab-content active">
+                <div class="feed-header">
+                    <h2>Eldoret Hustle Chronicles</h2>
+                    <div class="filter-pills" id="storyFilters">
+                        <button class="pill active" data-filter="all">All Stories</button>
+                        <button class="pill" data-filter="survival">Survival</button>
+                        <button class="pill" data-filter="tech">ICT & Code</button>
+                        <button class="pill" data-filter="ghetto">Ghetto Life</button>
+                    </div>
+                </div>
+
+                <div class="stories-grid" id="storiesContainer">
+                    <!-- Dynamic Stories rendered via JS -->
+                </div>
+            </div>
+
+            <!-- TAB 2: Personal Diary -->
+            <div id="diaryTab" class="tab-content">
+                <div class="diary-toolbar">
+                    <div class="search-box">
+                        <i class="ri-search-line"></i>
+                        <input type="text" id="diarySearchInput" placeholder="Search diary entries...">
+                    </div>
+                    <div class="privacy-toggle">
+                        <label class="switch">
+                            <input type="checkbox" id="privacyToggle">
+                            <span class="slider"></span>
+                        </label>
+                        <span>Privacy Blur Mode</span>
+                    </div>
+                    <button id="exportDiaryBtn" class="btn btn-outline">
+                        <i class="ri-download-2-line"></i> Export JSON
+                    </button>
+                </div>
+
+                <div class="diary-grid" id="diaryContainer">
+                    <!-- Diary cards populated via JS -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Native HTML5 Dialog Element for Adding Diary Entry -->
+    <dialog id="diaryModal" class="glass-modal">
+        <div class="modal-header">
+            <h3><i class="ri-quill-pen-line"></i> Knan's Personal Vault</h3>
+            <button id="closeModalBtn" class="icon-btn-sm"><i class="ri-close-line"></i></button>
+        </div>
+        <form id="diaryForm" method="dialog">
+            <div class="form-group">
+                <label for="entryTitle">Entry Title</label>
+                <input type="text" id="entryTitle" required placeholder="e.g., Late Night Debugging in Huruma">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="entryTag">Category Tag</label>
+                    <select id="entryTag">
+                        <option value="Street Survival">Street Survival</option>
+                        <option value="ICT & Tech">ICT & Tech</option>
+                        <option value="Ghetto Mindset">Ghetto Mindset</option>
+                        <option value="Financial Growth">Financial Growth</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="entryMood">Current Vibe / Mood</label>
+                    <select id="entryMood">
+                        <option value="⚡ Focused">⚡ Focused</option>
+                        <option value="🔥 Relentless">🔥 Relentless</option>
+                        <option value="🧘 Calm">🧘 Calm</option>
+                        <option value="💡 Inspired">💡 Inspired</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="entryContent">Log Content</label>
+                <textarea id="entryContent" rows="5" required placeholder="Write raw reflections, street updates, code wins, or goals..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="cancelModalBtn" class="btn btn-outline">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save to Vault</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="app.js"></script>
+</body>
+</html>
+<script>/**
+ * Knan Eldoret Life & Survival Engine
+ * Built with ES6+ JavaScript, Native LocalStorage & Event Delegation
+ */
+
+// Initial Seed Data for Eldoret Hustle Stories
+const INITIAL_STORIES = [
+    {
+        id: 's1',
+        title: 'Morning Rush along Uganda Road',
+        category: 'survival',
+        tag: 'Street Survival',
+        date: 'Today, 06:30 AM',
+        content: 'Matatus honking, street vendors setting up roasted maize stands. The air in Eldoret is crisp. In the ghetto, if you sleep in, someone else takes your daily bread. Time to build.',
+        likes: 14
+    },
+    {
+        id: 's2',
+        title: 'Power Outages & Battery Banks',
+        category: 'tech',
+        tag: 'ICT & Code',
+        date: 'Yesterday',
+        content: 'Blackout hit Huruma estate right in the middle of a build. Switched to my power bank, kept my mobile development environment running. No laptop? No power? No excuses.',
+        likes: 29
+    },
+    {
+        id: 's3',
+        title: 'Ghetto Code Bootcamp',
+        category: 'ghetto',
+        tag: 'Ghetto Life',
+        date: '3 days ago',
+        content: 'Gathered three local guys at a cyber cafe near Stage. Showed them how web apps work using raw HTML/CSS/JS. Knowledge shared is power multiplied.',
+        likes: 42
+    }
+];
+
+// Initial Seed Data for Personal Diary
+const INITIAL_DIARY = [
+    {
+        id: 'd1',
+        title: 'Mastering ES6 & Mobile Dev',
+        tag: 'ICT & Tech',
+        mood: '⚡ Focused',
+        date: 'August 14, 2026',
+        content: 'Refactored my local storage code today. Proved that you don’t need high-end laptops to build high-grade applications—just discipline and clean logic.'
+    },
+    {
+        id: 'd2',
+        title: 'Ghetto Resilience Rule #1',
+        tag: 'Ghetto Mindset',
+        mood: '🔥 Relentless',
+        date: 'August 10, 2026',
+        content: 'Eldoret teaches you patience. The hustle isn’t always linear. Some days are about surviving, other days are about scaling.'
+    }
+];
+
+class KnanApp {
+    constructor() {
+        this.stories = INITIAL_STORIES;
+        this.diary = JSON.parse(localStorage.getItem('knan_diary')) || INITIAL_DIARY;
+        
+        this.initDOM();
+        this.bindEvents();
+        this.renderStories('all');
+        this.renderDiary();
+    }
+
+    initDOM() {
+        // Core Containers
+        this.storiesContainer = document.getElementById('storiesContainer');
+        this.diaryContainer = document.getElementById('diaryContainer');
+        
+        // Navigation & Theme
+        this.themeToggleBtn = document.getElementById('themeToggleBtn');
+        this.tabBtns = document.querySelectorAll('.tab-btn');
+        this.tabContents = document.querySelectorAll('.tab-content');
+        this.storyFilters = document.getElementById('storyFilters');
+        
+        // Modal Elements
+        this.diaryModal = document.getElementById('diaryModal');
+        this.openModalBtn = document.getElementById('openModalBtn');
+        this.closeModalBtn = document.getElementById('closeModalBtn');
+        this.cancelModalBtn = document.getElementById('cancelModalBtn');
+        this.diaryForm = document.getElementById('diaryForm');
+        
+        // Utilities
+        this.diarySearchInput = document.getElementById('diarySearchInput');
+        this.privacyToggle = document.getElementById('privacyToggle');
+        this.exportDiaryBtn = document.getElementById('exportDiaryBtn');
+    }
+
+    bindEvents() {
+        // Theme Toggle Handler
+        this.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
+
+        // Tab Navigation
+        this.tabBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => this.switchTab(e.currentTarget.dataset.tab));
+        });
+
+        // Story Category Filtering
+        this.storyFilters.addEventListener('click', (e) => {
+            if (e.target.classList.contains('pill')) {
+                document.querySelectorAll('#storyFilters .pill').forEach(p => p.classList.remove('active'));
+                e.target.classList.add('active');
+                this.renderStories(e.target.dataset.filter);
+            }
+        });
+
+        // Modal Open / Close Handlers (HTML5 <dialog> API)
+        this.openModalBtn.addEventListener('click', () => this.diaryModal.showModal());
+        this.closeModalBtn.addEventListener('click', () => this.diaryModal.close());
+        this.cancelModalBtn.addEventListener('click', () => this.diaryModal.close());
+        
+        // Form Submission
+        this.diaryForm.addEventListener('submit', (e) => this.handleAddDiaryEntry(e));
+
+        // Diary Search
+        this.diarySearchInput.addEventListener('input', (e) => this.handleDiarySearch(e.target.value));
+
+        // Privacy Toggle Mode
+        this.privacyToggle.addEventListener('change', (e) => {
+            this.diaryContainer.classList.toggle('blurred', e.target.checked);
+        });
+
+        // Data Export
+        this.exportDiaryBtn.addEventListener('click', () => this.exportDiaryData());
+
+        // Like Button Event Delegation
+        this.storiesContainer.addEventListener('click', (e) => {
+            const likeBtn = e.target.closest('.like-btn');
+            if (likeBtn) {
+                const storyId = likeBtn.dataset.id;
+                this.handleLike(storyId, likeBtn);
+            }
+        });
+    }
+
+    // Theme Switcher Logic
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        this.themeToggleBtn.innerHTML = newTheme === 'dark' 
+            ? '<i class="ri-moon-clear-line"></i>' 
+            : '<i class="ri-sun-line"></i>';
+    }
+
+    // Tab Switching
+    switchTab(tabId) {
+        this.tabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
+        this.tabContents.forEach(content => {
+            content.classList.toggle('active', content.id === `${tabId}Tab`);
+        });
+    }
+
+    // Render Eldoret Stories
+    renderStories(filter) {
+        const filtered = filter === 'all' 
+            ? this.stories 
+            : this.stories.filter(s => s.category === filter);
+
+        this.storiesContainer.innerHTML = filtered.map(story => `
+            <article class="story-card">
+                <div>
+                    <div class="card-meta">
+                        <span class="card-tag">${story.tag}</span>
+                        <span>${story.date}</span>
+                    </div>
+                    <h3 class="card-title">${story.title}</h3>
+                    <p class="card-body">${story.content}</p>
+                </div>
+                <div class="card-footer">
+                    <span><i class="ri-user-line"></i> Knan</span>
+                    <button class="btn btn-outline like-btn" data-id="${story.id}">
+                        <i class="ri-heart-line"></i> <span class="like-count">${story.likes}</span>
+                    </button>
+                </div>
+            </article>
+        `).join('');
+    }
+
+    // Render Diary Entries
+    renderDiary(entries = this.diary) {
+        if (entries.length === 0) {
+            this.diaryContainer.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2rem;">
+                    <i class="ri-book-open-line" style="font-size: 2rem;"></i>
+                    <p>No diary entries found.</p>
+                </div>`;
+            return;
+        }
+
+        this.diaryContainer.innerHTML = entries.map(entry => `
+            <article class="diary-card">
+                <div>
+                    <div class="card-meta">
+                        <span class="card-tag">${entry.tag}</span>
+                        <span>${entry.mood}</span>
+                    </div>
+                    <h3 class="card-title">${entry.title}</h3>
+                    <p class="card-body">${entry.content}</p>
+                </div>
+                <div class="card-footer">
+                    <span><i class="ri-calendar-event-line"></i> ${entry.date}</span>
+                    <button class="icon-btn-sm" onclick="app.deleteDiaryEntry('${entry.id}')" title="Delete Entry">
+                        <i class="ri-delete-bin-line"></i>
+                    </button>
+                </div>
+            </article>
+        `).join('');
+    }
+
+    // Save New Diary Entry
+    handleAddDiaryEntry(e) {
+        e.preventDefault();
+        
+        const title = document.getElementById('entryTitle').value;
+        const tag = document.getElementById('entryTag').value;
+        const mood = document.getElementById('entryMood').value;
+        const content = document.getElementById('entryContent').value;
+
+        const newEntry = {
+            id: 'd_' + Date.now(),
+            title,
+            tag,
+            mood,
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            content
+        };
+
+        this.diary.unshift(newEntry);
+        this.saveDiary();
+        this.renderDiary();
+        
+        this.diaryForm.reset();
+        this.diaryModal.close();
+    }
+
+    deleteDiaryEntry(id) {
+        this.diary = this.diary.filter(item => item.id !== id);
+        this.saveDiary();
+        this.renderDiary();
+    }
+
+    saveDiary() {
+        localStorage.setItem('knan_diary', JSON.stringify(this.diary));
+    }
+
+    handleDiarySearch(query) {
+        const q = query.toLowerCase();
+        const filtered = this.diary.filter(d => 
+            d.title.toLowerCase().includes(q) || 
+            d.content.toLowerCase().includes(q) ||
+            d.tag.toLowerCase().includes(q)
+        );
+        this.renderDiary(filtered);
+    }
+
+    handleLike(storyId, btnElement) {
+        const story = this.stories.find(s => s.id === storyId);
+        if (story) {
+            story.likes++;
+            const countSpan = btnElement.querySelector('.like-count');
+            countSpan.textContent = story.likes;
+            btnElement.style.color = 'var(--primary)';
+        }
+    }
+
+    exportDiaryData() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.diary, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `knan_eldoret_diary_${Date.now()}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+}
+
+// Instantiate App Global Instance
+let app;
+document.addEventListener('DOMContentLoaded', () => {
+    app = new KnanApp();
+});
+</script></body></html>
