@@ -169,7 +169,28 @@ jobs:
         run: |
           set -e
           chmod +x ./gradlew
-          ./gradlew assembleRelease --no-daemon
+
+          # The default 10-second download timeout is too tight on busy runners
+          # (this is what made builds #30+ fail while fetching Gradle).
+          WRAP=gradle/wrapper/gradle-wrapper.properties
+          sed -i 's/^networkTimeout=.*/networkTimeout=180000/' "$WRAP"
+          grep -q '^networkTimeout=' "$WRAP" || echo 'networkTimeout=180000' >> "$WRAP"
+          sed -i 's/-all\.zip/-bin.zip/' "$WRAP"
+          cat "$WRAP"
+
+          # Longer timeouts for dependency downloads too
+          echo "systemProp.org.gradle.internal.http.connectionTimeout=180000" >> gradle.properties
+          echo "systemProp.org.gradle.internal.http.socketTimeout=180000" >> gradle.properties
+
+          # Try up to 3 times in case the download hiccups again
+          OK=0
+          for ATTEMPT in 1 2 3; do
+            echo "=== Gradle attempt $ATTEMPT of 3 ==="
+            if ./gradlew assembleRelease --no-daemon; then OK=1; break; fi
+            echo "Attempt $ATTEMPT failed — retrying in 20s"
+            sleep 20
+          done
+          if [ "$OK" != "1" ]; then echo "Gradle failed after 3 attempts"; exit 1; fi
 
       - name: Sign APK
         working-directory: mobile-project/android
