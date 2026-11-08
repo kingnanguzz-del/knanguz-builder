@@ -170,24 +170,59 @@ jobs:
           set -e
           chmod +x ./gradlew
 
-          # The default 10-second download timeout is too tight on busy runners
-          # (this is what made builds #30+ fail while fetching Gradle).
           WRAP=gradle/wrapper/gradle-wrapper.properties
-          sed -i 's/^networkTimeout=.*/networkTimeout=180000/' "$WRAP"
-          grep -q '^networkTimeout=' "$WRAP" || echo 'networkTimeout=180000' >> "$WRAP"
-          sed -i 's/-all\.zip/-bin.zip/' "$WRAP"
+          GV=$(grep -oP 'gradle-\K[0-9.]+(?=-)' "$WRAP" | head -1)
+          GV=${GV:-8.11.1}
+          echo "Gradle version needed: $GV"
+
+          # Download Gradle ourselves from several sources (the official one
+          # sometimes returns HTTP 504), then point the wrapper at the file.
+          ZIP="/tmp/gradle-${GV}-bin.zip"
+          GOT=0
+          for URL in \
+            "https://services.gradle.org/distributions/gradle-${GV}-bin.zip" \
+            "https://downloads.gradle.org/distributions/gradle-${GV}-bin.zip" \
+            "https://mirrors.cloud.tencent.com/gradle/gradle-${GV}-bin.zip" \
+            "https://repo.huaweicloud.com/gradle/gradle-${GV}-bin.zip"; do
+            echo "Trying $URL"
+            if curl -fL --retry 3 --retry-delay 5 --retry-all-errors \
+                 --connect-timeout 20 --max-time 400 -o "$ZIP" "$URL" \
+               && unzip -tq "$ZIP" > /dev/null 2>&1; then
+              GOT=1
+              echo "Downloaded OK from $URL"
+              break
+            fi
+            echo "Failed, trying next source"
+            rm -f "$ZIP"
+          done
+
+          if [ "$GOT" = "1" ]; then
+            cat > "$WRAP" <<EOF
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=file\:///tmp/gradle-${GV}-bin.zip
+          networkTimeout=180000
+          validateDistributionUrl=false
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+          else
+            echo "All sources failed - falling back to the default wrapper download"
+            sed -i 's/^networkTimeout=.*/networkTimeout=180000/' "$WRAP"
+            sed -i 's/-all\.zip/-bin.zip/' "$WRAP"
+          fi
           cat "$WRAP"
 
           # Longer timeouts for dependency downloads too
           echo "systemProp.org.gradle.internal.http.connectionTimeout=180000" >> gradle.properties
           echo "systemProp.org.gradle.internal.http.socketTimeout=180000" >> gradle.properties
 
-          # Try up to 3 times in case the download hiccups again
+          # Try up to 3 times in case a download hiccups
           OK=0
           for ATTEMPT in 1 2 3; do
             echo "=== Gradle attempt $ATTEMPT of 3 ==="
             if ./gradlew assembleRelease --no-daemon; then OK=1; break; fi
-            echo "Attempt $ATTEMPT failed — retrying in 20s"
+            echo "Attempt $ATTEMPT failed - retrying in 20s"
             sleep 20
           done
           if [ "$OK" != "1" ]; then echo "Gradle failed after 3 attempts"; exit 1; fi
@@ -259,5 +294,4 @@ jobs:
           [ -n "$ZIP_PATH" ] && git rm -f "$ZIP_PATH" || true
           [ -n "$ICON_PATH" ] && git rm -f "$ICON_PATH" || true
           git commit -m "knanGuz: clean up payload for $BUILD_ID" || true
-          git push || truenanGuz: clean up payload for $BUILD_ID" || true
           git push || true
