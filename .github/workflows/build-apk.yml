@@ -259,4 +259,5 @@ jobs:
           [ -n "$ZIP_PATH" ] && git rm -f "$ZIP_PATH" || true
           [ -n "$ICON_PATH" ] && git rm -f "$ICON_PATH" || true
           git commit -m "knanGuz: clean up payload for $BUILD_ID" || true
+          git push || truenanGuz: clean up payload for $BUILD_ID" || true
           git push || true
